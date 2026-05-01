@@ -1218,7 +1218,7 @@ dependencies = [
  "thiserror 2.0.17",
  "tokio",
  "wgpu-core",
- "wgpu-types",
+ "wgpu-types 27.0.4",
 ]
 
 [[package]]
@@ -2467,6 +2467,32 @@ dependencies = [
 
 [[package]]
 name = "naga"
+version = "27.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "066cf25f0e8b11ee0df221219010f213ad429855f57c494f995590c861a9a7d8"
+dependencies = [
+ "arrayvec",
+ "bit-set",
+ "bitflags 2.9.4",
+ "cfg-if",
+ "cfg_aliases 0.2.1",
+ "codespan-reporting",
+ "half",
+ "hashbrown 0.16.0",
+ "hexf-parse",
+ "indexmap",
+ "libm",
+ "log",
+ "num-traits",
+ "once_cell",
+ "rustc-hash 1.1.0",
+ "spirv",
+ "thiserror 2.0.17",
+ "unicode-ident",
+]
+
+[[package]]
+name = "naga"
 version = "27.0.4"
 dependencies = [
  "arbitrary",
@@ -2512,7 +2538,7 @@ dependencies = [
  "codespan-reporting",
  "env_logger",
  "log",
- "naga",
+ "naga 27.0.4",
 ]
 
 [[package]]
@@ -2522,7 +2548,7 @@ dependencies = [
  "arbitrary",
  "cfg_aliases 0.2.1",
  "libfuzzer-sys",
- "naga",
+ "naga 27.0.4",
 ]
 
 [[package]]
@@ -2531,7 +2557,7 @@ version = "27.0.4"
 dependencies = [
  "bitflags 2.9.4",
  "env_logger",
- "naga",
+ "naga 27.0.4",
  "ron",
  "rspirv",
  "serde",
@@ -3181,7 +3207,7 @@ dependencies = [
  "ron",
  "serde",
  "wgpu-core",
- "wgpu-types",
+ "wgpu-types 27.0.4",
  "winit 0.29.15",
 ]
 
@@ -4795,7 +4821,7 @@ dependencies = [
  "hashbrown 0.16.0",
  "js-sys",
  "log",
- "naga",
+ "naga 27.0.4",
  "parking_lot",
  "portable-atomic",
  "profiling",
@@ -4807,7 +4833,7 @@ dependencies = [
  "web-sys",
  "wgpu-core",
  "wgpu-hal",
- "wgpu-types",
+ "wgpu-types 27.0.4",
 ]
 
 [[package]]
@@ -4817,7 +4843,7 @@ dependencies = [
  "bincode 2.0.1",
  "bytemuck",
  "criterion",
- "naga",
+ "naga 27.0.4",
  "naga-test",
  "nanorand 0.8.0",
  "pollster",
@@ -4841,7 +4867,7 @@ dependencies = [
  "hashbrown 0.16.0",
  "indexmap",
  "log",
- "naga",
+ "naga 27.0.4",
  "once_cell",
  "parking_lot",
  "portable-atomic",
@@ -4857,7 +4883,7 @@ dependencies = [
  "wgpu-core-deps-wasm",
  "wgpu-core-deps-windows-linux-android",
  "wgpu-hal",
- "wgpu-types",
+ "wgpu-types 27.0.4",
 ]
 
 [[package]]
@@ -4944,7 +4970,7 @@ dependencies = [
  "web-time 1.1.0",
  "wgpu",
  "wgpu-test",
- "wgpu-types",
+ "wgpu-types 27.0.4",
  "winit 0.29.15",
 ]
 
@@ -4979,7 +5005,7 @@ dependencies = [
  "log",
  "mach-dxcompiler-rs",
  "metal",
- "naga",
+ "naga 27.0.3",
  "ndk-sys 0.6.0+11769913",
  "objc",
  "once_cell",
@@ -4997,7 +5023,7 @@ dependencies = [
  "thiserror 2.0.17",
  "wasm-bindgen",
  "web-sys",
- "wgpu-types",
+ "wgpu-types 27.0.1",
  "windows 0.58.0",
  "windows-core 0.58.0",
  "winit 0.29.15",
@@ -5065,6 +5091,19 @@ dependencies = [
  "wgpu",
  "wgpu-hal",
  "wgpu-macros",
+]
+
+[[package]]
+name = "wgpu-types"
+version = "27.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "afdcf84c395990db737f2dd91628706cb31e86d72e53482320d368e52b5da5eb"
+dependencies = [
+ "bitflags 2.9.4",
+ "bytemuck",
+ "js-sys",
+ "log",
+ "web-sys",
 ]
 
 [[package]]
