@@ -202,8 +202,16 @@ required-features = ["gles"]
 #####################
 
 [dependencies]
-naga.workspace = true
-wgpu-types = { workspace = true, default-features = false }
+# [seer-patch] Pin to crates.io versions instead of workspace
+# inheritance. When this crate is consumed via `[patch.crates-io]
+# wgpu-hal = path = ".../wgpu-hal"` from the seer workspace,
+# inheriting naga + wgpu-types from the in-tree wgpu workspace
+# pulls in-tree (post-27.0.0) versions that don't match the
+# crates.io 27.0.0 wgpu-core sees — yielding 200+ type errors at
+# the wgpu-core ↔ wgpu-hal boundary. Pinning to crates.io 27.0.0
+# keeps both halves of wgpu pointing at the same naga binary.
+naga = { version = "27.0.0", features = ["termcolor"] }
+wgpu-types = { version = "27.0.0", default-features = false }
 
 # Dependencies in the lib and empty backend
 bitflags.workspace = true
@@ -332,7 +340,8 @@ cfg_aliases.workspace = true
 [dev-dependencies]
 env_logger.workspace = true
 glam.workspace = true                                            # for ray-traced-triangle example
-naga = { workspace = true, features = ["wgsl-in", "termcolor"] }
+# [seer-patch] Pin to crates.io to match the [dependencies] entry above.
+naga = { version = "27.0.0", features = ["wgsl-in", "termcolor"] }
 winit.workspace = true                                           # for "halmark" example
 
 ### Platform: Windows + MacOS + Linux for "raw-gles" example ###
