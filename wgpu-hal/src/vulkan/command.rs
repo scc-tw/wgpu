@@ -163,10 +163,19 @@ impl crate::CommandEncoder for super::CommandEncoder {
     }
 
     unsafe fn discard_encoding(&mut self) {
-        // Safe use requires this is not called in the "closed" state, so the buffer
-        // shouldn't be null. Assert this to make sure we're not pushing null
-        // buffers to the discard pile.
-        assert_ne!(self.active, vk::CommandBuffer::null());
+        // [seer-patch] Upstream panics here if `self.active` is null.
+        // Hit on Ruffle's offscreen pipeline against live 賽爾號
+        // (something calls discard_encoding while no command buffer
+        // is open). Demote to a debug log + early return so the
+        // launcher keeps running while we investigate the real
+        // upstream bug.
+        if self.active == vk::CommandBuffer::null() {
+            log::warn!(
+                "[seer-patch] discard_encoding called on null active buffer; \
+                 skipping (was: panic at wgpu-hal vulkan/command.rs:169)"
+            );
+            return;
+        }
 
         self.discarded.push(self.active);
         self.active = vk::CommandBuffer::null();
