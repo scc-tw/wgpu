@@ -670,11 +670,23 @@ impl InnerCommandEncoder {
         label: Option<&str>,
     ) -> Result<&mut dyn hal::DynCommandEncoder, DeviceError> {
         assert!(!self.is_open);
-        self.is_open = true;
 
+        // [seer-patch] Set `is_open` only AFTER `begin_encoding`
+        // succeeds. The original order set `is_open = true` first; if
+        // `begin_encoding` then errored (e.g. transient
+        // command-buffer alloc failure under memory pressure), the
+        // function returned Err but the inner encoder was left in
+        // (is_open=true, active=null) state. The subsequent Drop
+        // then called `discard_encoding` on the null active buffer,
+        // tripping the wgpu-hal vulkan assertion at command.rs:169.
+        // (Our defensive patch in wgpu-hal converted that panic to a
+        // warn-and-skip, but the state inconsistency leaked
+        // resources into eventual OOM.) Reordering keeps the flag
+        // and the underlying encoder in sync.
         let hal_label = hal_label(label, self.device.instance_flags);
         unsafe { self.raw.begin_encoding(hal_label) }
             .map_err(|e| self.device.handle_hal_error(e))?;
+        self.is_open = true;
 
         Ok(self.raw.as_mut())
     }
