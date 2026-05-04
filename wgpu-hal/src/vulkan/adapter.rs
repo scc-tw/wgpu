@@ -2342,6 +2342,9 @@ impl super::Adapter {
             #[cfg(feature = "renderdoc")]
             render_doc: Default::default(),
             counters: Default::default(),
+            // [seer-patch 1.7] Periodic cleanup counter; see Device
+            // struct doc comment.
+            dealloc_counter: std::sync::atomic::AtomicU32::new(0),
         };
 
         Ok(crate::OpenDevice { device, queue })

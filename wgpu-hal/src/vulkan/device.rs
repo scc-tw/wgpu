@@ -1182,7 +1182,9 @@ impl crate::Device for super::Device {
             self.counters.buffer_memory.sub(block.size() as isize);
             match block {
                 super::BufferMemoryBacking::Managed(block) => unsafe {
-                    self.mem_allocator.lock().dealloc(&*self.shared, block)
+                    // [seer-patch 1.7] route through dealloc_block so
+                    // periodic gpu_alloc::cleanup runs.
+                    self.dealloc_block(block)
                 },
                 super::BufferMemoryBacking::VulkanMemory { memory, .. } => unsafe {
                     self.shared.raw.free_memory(memory, None);
@@ -1328,7 +1330,9 @@ impl crate::Device for super::Device {
         if let Some(block) = texture.block {
             self.counters.texture_memory.sub(block.size() as isize);
 
-            unsafe { self.mem_allocator.lock().dealloc(&*self.shared, block) };
+            // [seer-patch 1.7] route through dealloc_block so
+            // periodic gpu_alloc::cleanup runs.
+            unsafe { self.dealloc_block(block) };
         }
 
         self.counters.textures.sub(1);
@@ -2794,9 +2798,9 @@ impl crate::Device for super::Device {
             self.shared
                 .raw
                 .destroy_buffer(acceleration_structure.buffer, None);
-            self.mem_allocator
-                .lock()
-                .dealloc(&*self.shared, acceleration_structure.block.into_inner());
+            // [seer-patch 1.7] route through dealloc_block so
+            // periodic gpu_alloc::cleanup runs.
+            self.dealloc_block(acceleration_structure.block.into_inner());
             if let Some(query) = acceleration_structure.compacted_size_query {
                 self.shared.raw.destroy_query_pool(query, None)
             }

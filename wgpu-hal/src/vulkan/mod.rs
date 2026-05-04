@@ -762,12 +762,63 @@ pub struct Device {
     #[cfg(feature = "renderdoc")]
     render_doc: crate::auxil::renderdoc::RenderDoc,
     counters: Arc<wgt::HalCounters>,
+    /// [seer-patch 1.7] Counter that drives periodic
+    /// `gpu_alloc::cleanup` calls. ETW (2026-05-04, 60s) confirmed
+    /// 0 VirtualFree events without it: `gpu_alloc::dealloc` calls
+    /// `freelist.drain(true)` which keeps a reserve, while
+    /// `cleanup()` walks every freelist and `drain(false)` drops
+    /// every empty block back to the OS. wgpu-hal previously only
+    /// called `cleanup` from `Drop`. See
+    /// `docs/plans/bitmap-memory-1.7.md` §1 (1B-iii).
+    dealloc_counter: std::sync::atomic::AtomicU32,
 }
 
 impl Drop for Device {
     fn drop(&mut self) {
         unsafe { self.mem_allocator.lock().cleanup(&*self.shared) };
         unsafe { self.desc_allocator.lock().cleanup(&*self.shared) };
+    }
+}
+
+impl Device {
+    /// [seer-patch 1.7] Helper for `gpu_alloc` block deallocation
+    /// that drives periodic full-cleanup. Routes every dealloc
+    /// through this method so we don't have to bump the counter at
+    /// each individual call site.
+    ///
+    /// gpu_alloc's normal `dealloc` calls `freelist.drain(true)`
+    /// which keeps a reserve of empty blocks for fast reuse. Without
+    /// any other intervention those empty blocks accumulate
+    /// indefinitely (ETW 2026-05-04: 0 VirtualFree events in 60s).
+    /// `cleanup()` walks every freelist and calls `drain(false)` to
+    /// drop everything; we call it every `CLEANUP_INTERVAL`
+    /// deallocs.
+    ///
+    /// `CLEANUP_INTERVAL = 64` is a starting point chosen for an
+    /// expected dealloc rate of ~10/s during gameplay, putting
+    /// cleanup at ~6 s cadence. Each `vkFreeMemory` is sync (~1–5
+    /// ms); cleanup of N empty blocks costs N × that. If frame-time
+    /// outliers correlate with cleanup, raise the interval. If
+    /// `tex-census pool_mb` keeps growing, lower it.
+    ///
+    /// SAFETY: `gpu_alloc::dealloc` and `cleanup` both require that
+    /// `device` is the same one used to construct the allocator.
+    /// `self.shared` is the `DeviceShared` used for all alloc/dealloc
+    /// in this `Device` (see `mem_allocator: Mutex<...>` field
+    /// invariant set up in `adapter.rs::open_internal`).
+    unsafe fn dealloc_block(
+        &self,
+        block: gpu_alloc::MemoryBlock<vk::DeviceMemory>,
+    ) {
+        const CLEANUP_INTERVAL: u32 = 64;
+        let mut alloc = self.mem_allocator.lock();
+        unsafe { alloc.dealloc(&*self.shared, block) };
+        let n = self
+            .dealloc_counter
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if n.wrapping_add(1) % CLEANUP_INTERVAL == 0 {
+            unsafe { alloc.cleanup(&*self.shared) };
+        }
     }
 }
 
