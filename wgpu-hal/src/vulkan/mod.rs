@@ -810,7 +810,17 @@ impl Device {
         &self,
         block: gpu_alloc::MemoryBlock<vk::DeviceMemory>,
     ) {
-        const CLEANUP_INTERVAL: u32 = 64;
+        // [seer-patch 1.7 §1 — tightened 2026-05-04] CLEANUP_INTERVAL
+        // 64 → 8. ETW (post-Phase-2 fight UI repro, 2026-05-04) showed
+        // 0 VirtualFree events even with the 64-interval patch. Most
+        // cleanup() calls find nothing to drain because wgpu's
+        // deferred-destroy queue holds Arc<Texture> clones past user
+        // drop, keeping gpu_alloc blocks non-empty. Calling cleanup
+        // 8× more often raises the chance of catching the brief
+        // window when wgpu has just released its references and the
+        // block transitions to empty. Cheap when the freelists are
+        // empty (couple of HashMap walks).
+        const CLEANUP_INTERVAL: u32 = 8;
         let mut alloc = self.mem_allocator.lock();
         unsafe { alloc.dealloc(&*self.shared, block) };
         let n = self
