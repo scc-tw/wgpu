@@ -124,12 +124,13 @@ impl crate::CommandEncoder for super::CommandEncoder {
             let vk_info = vk::CommandBufferAllocateInfo::default()
                 .command_pool(self.raw)
                 .command_buffer_count(ALLOCATION_GRANULARITY);
-            let cmd_buf_vec = unsafe {
-                self.device
-                    .raw
-                    .allocate_command_buffers(&vk_info)
-                    .map_err(super::map_host_device_oom_err)?
-            };
+            let cmd_buf_vec = unsafe { self.device.raw.allocate_command_buffers(&vk_info) }
+                .map_err(|error| {
+                    log::error!(
+                        "[seer-patch] vkAllocateCommandBuffers failed: {error:?}; requested={ALLOCATION_GRANULARITY}"
+                    );
+                    super::map_host_device_oom_err(error)
+                })?;
             self.free.extend(cmd_buf_vec);
         }
         let raw = self.free.pop().unwrap();
@@ -143,8 +144,10 @@ impl crate::CommandEncoder for super::CommandEncoder {
 
         let vk_info = vk::CommandBufferBeginInfo::default()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
-        unsafe { self.device.raw.begin_command_buffer(raw, &vk_info) }
-            .map_err(super::map_host_device_oom_err)?;
+        unsafe { self.device.raw.begin_command_buffer(raw, &vk_info) }.map_err(|error| {
+            log::error!("[seer-patch] vkBeginCommandBuffer failed: {error:?}");
+            super::map_host_device_oom_err(error)
+        })?;
         self.active = raw;
 
         Ok(())

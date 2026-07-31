@@ -1078,6 +1078,13 @@ impl super::Device {
             let heap_budget = memory_budget_properties.heap_budget[i];
 
             if heap_usage + size >= heap_budget / 100 * threshold as u64 {
+                log::warn!(
+                    "[seer-patch] rejecting Vulkan resource allocation at memory-budget threshold: \
+                     heap={i} usage_mib={} budget_mib={} requested_mib={} threshold_pct={threshold} host_access={needs_host_access}",
+                    heap_usage / 1024 / 1024,
+                    heap_budget / 1024 / 1024,
+                    size / 1024 / 1024,
+                );
                 return Err(crate::DeviceError::OutOfMemory);
             }
         }
